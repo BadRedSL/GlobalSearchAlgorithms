@@ -322,8 +322,11 @@ int main()
 	//std::cout << minValue(0, 6.5, 4, 0.00001, 1000, function9);//Все верно
 	//std::cout << minValue(-3, 3, 85, 0.001, 1000, function10);//Отличатеся на знак
 
-	//std::cout << minValue(0, 6.5, 4, 0.00000000001, 12000, function9);//329сек
-	//std::cout << minValueOld(0, 6.5, 4, 0.00000000001, 12000, function9);//408сек
+	//std::cout << minValue(0, 6.5, 4, 0.00000000001, 12000, function9);//329 сек debug-mode
+	//std::cout << minValueOld(0, 6.5, 4, 0.00000000001, 12000, function9);//408 сек debug-mode
+
+	//std::cout << minValue(0, 6.5, 4, 0.00000000001, 12000, function9);//9 сек release-mode
+	//std::cout << minValueOld(0, 6.5, 4, 0.00000000001, 12000, function9);//10,5 сек release-mode
 
 	return 0;
 }
