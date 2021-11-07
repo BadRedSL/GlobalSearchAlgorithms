@@ -312,20 +312,20 @@ int main()
 {
 	setlocale(LC_ALL, "rus");
 
-	//std::cout << minValue(2.7, 7.5, 4.29, 0.001, 1000, function1); //Все верно
-	//std::cout << minValue(0, 10, 67, 0.001, 1000, function2); //Все верно
-	//std::cout << minValue(0, 1.2, 36, 0.001, 1000, function3); //Все верно
-	//std::cout << minValue(-10, 10, 2.5, 0.001, 1000, function4); //Все верно
-	//std::cout << minValue(2.7, 7.5, 6, 0.001, 1000, function5); //Все верно
-	//std::cout << minValue(0, 4, 6.5, 0.001, 1000, function7);//Все верно
-	//std::cout << minValue(-5, 5, 6.5, 0.001, 1000, function8);//Все верно
-	//std::cout << minValue(0, 6.5, 4, 0.00001, 1000, function9);//Все верно
+	//std::cout << minValue(2.7, 7.5, 4.29, 0.001, 1000, function1); 
+	//std::cout << minValue(0, 10, 67, 0.001, 1000, function2); 
+	//std::cout << minValue(0, 1.2, 36, 0.001, 1000, function3); 
+	//std::cout << minValue(-10, 10, 2.5, 0.001, 1000, function4); 
+	//std::cout << minValue(2.7, 7.5, 6, 0.001, 1000, function5); 
+	//std::cout << minValue(0, 4, 6.5, 0.001, 1000, function7);
+	//std::cout << minValue(-5, 5, 6.5, 0.001, 1000, function8);
+	//std::cout << minValue(0, 6.5, 4, 0.00001, 1000, function9);
 	//std::cout << minValue(-3, 3, 85, 0.001, 1000, function10);//Отличатеся на знак
 
 	//std::cout << minValue(0, 6.5, 4, 0.00000000001, 12000, function9);//329 сек debug-mode
 	//std::cout << minValueOld(0, 6.5, 4, 0.00000000001, 12000, function9);//408 сек debug-mode
 
-	//std::cout << minValue(0, 6.5, 4, 0.00000000001, 12000, function9);//9 сек release-mode
+	std::cout << minValue(0, 6.5, 4, 0.00000000001, 12000, function9);//9 сек release-mode
 	//std::cout << minValueOld(0, 6.5, 4, 0.00000000001, 12000, function9);//10,5 сек release-mode
 
 	return 0;
