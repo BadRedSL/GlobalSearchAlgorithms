@@ -1,7 +1,7 @@
 #pragma once
 
 
-class Point
+struct Point
 {
 public:
 

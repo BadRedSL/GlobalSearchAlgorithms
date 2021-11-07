@@ -11,8 +11,6 @@
 #include "ForR.h"
 
 
-
-
 double minValueOld(const double a, const double b, const double r, const double accuracy,
 	size_t nMax, double (*fnc)(double))
 {
@@ -250,16 +248,9 @@ double minValue(const double a, const double b, const double r, const double acc
 				newR.setForR(R, (*curTmp).first, (*prevTmp).first);
 				(*rQueue).push(newR);
 
-				if ((*rQueue).top().R == R)
-				{
-					rightPoint = (*curTmp).first;
-					leftPoint = (*prevTmp).first;
-				}
-				else
-				{
-					rightPoint = (*rQueue).top().rightPoint;
-					leftPoint = (*rQueue).top().leftPoint;
-				}
+				
+				rightPoint = (*rQueue).top().rightPoint;
+				leftPoint = (*rQueue).top().leftPoint;
 
 			}
 		}
@@ -279,17 +270,9 @@ double minValue(const double a, const double b, const double r, const double acc
 				newR.setForR(R, (*curTmp).first, (*prevTmp).first);
 				(*rQueue).push(newR);
 
-				if ((*rQueue).top().R == R)
-				{
-					rightPoint = (*curTmp).first;
-					leftPoint = (*prevTmp).first;
-				}
-				else
-				{
-					rightPoint = (*rQueue).top().rightPoint;
-					leftPoint = (*rQueue).top().leftPoint;
-				}
-
+				rightPoint = (*rQueue).top().rightPoint;
+				leftPoint = (*rQueue).top().leftPoint;
+				
 			}
 
 		}
@@ -305,7 +288,7 @@ double minValue(const double a, const double b, const double r, const double acc
 	std::chrono::duration<double> sec = end - start;
 	std::cout << "Время работы алгоритма: " << sec.count() << " сек " << std::endl;
 
-	return min;
+	return minX;
 }
 
 int main()
@@ -320,13 +303,13 @@ int main()
 	//std::cout << minValue(0, 4, 6.5, 0.001, 1000, function7);
 	//std::cout << minValue(-5, 5, 6.5, 0.001, 1000, function8);
 	//std::cout << minValue(0, 6.5, 4, 0.00001, 1000, function9);
-	//std::cout << minValue(-3, 3, 85, 0.001, 1000, function10);//Отличатеся на знак
+	//std::cout << minValue(-3, 3, 85, 0.001, 1000, function10);
 
-	//std::cout << minValue(0, 6.5, 4, 0.00000000001, 12000, function9);//329 сек debug-mode
-	//std::cout << minValueOld(0, 6.5, 4, 0.00000000001, 12000, function9);//408 сек debug-mode
+	//std::cout << minValue(0, 6.5, 4, 0.00000000001, 12000, function9);//329 sec debug-mode
+	//std::cout << minValueOld(0, 6.5, 4, 0.00000000001, 12000, function9);//408 sec debug-mode
 
-	std::cout << minValue(0, 6.5, 4, 0.00000000001, 12000, function9);//9 сек release-mode
-	//std::cout << minValueOld(0, 6.5, 4, 0.00000000001, 12000, function9);//10,5 сек release-mode
+	std::cout << minValue(0, 6.5, 4, 0.00000000001, 12000, function9);//9 sec release-mode
+	//std::cout << minValueOld(0, 6.5, 4, 0.00000000001, 12000, function9);//10,5 sec release-mode
 
 	return 0;
 }
