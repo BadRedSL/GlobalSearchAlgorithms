@@ -11,7 +11,8 @@
 #include "Functions.h"
 #include "ForR.h"
 
-//последовательынй алгоритм (бух функций)
+// последовательный алгоритм (без функций)
+// sequential algorithm (no functions)
 
 double minValue(const double a, const double b, const double r, const double accuracy,
     size_t nMax, double (*fnc)(double), double& result)
@@ -149,7 +150,8 @@ double minValue(const double a, const double b, const double r, const double acc
 }
 
 
-//параллельный (по отразкам) алгоритм (использует последовательынй алгоритм)
+// параллельный (по отразкам) алгоритм (использует последовательный алгоритм)
+// parallel (by reflections) algorithm (uses a sequential algorithm)
 
 double inefficientParallelAlgorithm(size_t numThread, double leftBorder, double rightBorder,
     double r, double accuracy, size_t maxIteration, double (*fnc)(double))
@@ -196,7 +198,8 @@ double inefficientParallelAlgorithm(size_t numThread, double leftBorder, double 
 }
 
 
-//функции для последовательного алгоритма
+// функции для последовательного алгоритма
+// functions for sequential algorithm
 
 void setCalculateNewPoint(std::pair<std::map<Point, double>::iterator, bool>& curIter, std::priority_queue<ForR, std::vector<ForR>, std::less<ForR>>* rQueue, std::map<Point, double>& set,
     double& min, double& minX, const double m, double (*fnc)(double))
@@ -289,7 +292,8 @@ void reNewR(std::priority_queue<ForR, std::vector<ForR>, std::less<ForR>>** rQue
 }
 
 
-//последовательный алгоритм на функциях
+// последовательный алгоритм на функциях
+// sequential algorithm on functions
 
 double functionMinValue(const double a, const double b, const double r, const double accuracy, size_t nMax, double (*fnc)(double))
 {
@@ -359,7 +363,8 @@ double functionMinValue(const double a, const double b, const double r, const do
     return minX;
 }
 
-//функции для параллельного алгоритма
+// функции для параллельного алгоритма
+// functions for the parallel algorithm
 
 void parallelCalculateNewPoint(const ForR top, double (*fnc)(double), const double m, Point& newPoint)
 {
@@ -441,7 +446,8 @@ void parallelCalculateR(const double r, const double M, const std::pair<std::map
 }
 
 
-//параллельный алгоритм (в разработке)
+// параллельный алгоритм (в разработке)
+// parallel algorithm (in development)
 
 //double parallelMinValue(size_t numThread, const double a, const double b, const double r, const double accuracy, size_t nMax, double (*fnc)(double))
 //{
