@@ -1,5 +1,10 @@
 #include "ForR.h"
 
+ForR::ForR()
+{
+	R = 0;
+}
+
 ForR::ForR(double R, Point rightPoint, Point leftPoint)
 {
 	this->R = R;

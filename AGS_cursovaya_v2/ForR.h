@@ -9,6 +9,8 @@ public:
 	Point rightPoint;
 	Point leftPoint;
 
+	ForR();
+
 	ForR(double R, Point rightPoint, Point leftPoint);
 
 	void setForR(double R, Point rightPoint, Point leftPoint);
