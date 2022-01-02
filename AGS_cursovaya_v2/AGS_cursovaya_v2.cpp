@@ -441,7 +441,7 @@ void parallelCalculateR(const double r, const double M, const std::pair<std::map
         {
             secondR = newR;
         }
-        
+
     }
 }
 
@@ -458,7 +458,7 @@ void parallelCalculateR(const double r, const double M, const std::pair<std::map
 //    std::vector<double> secondM(numThread);
 //    std::vector<ForR> firstR(numThread);
 //    std::vector<ForR> secondR(numThread);
-//    
+//
 //
 //    bool changeM = false;
 //    std::vector<ForR> newR(2);
@@ -525,7 +525,7 @@ void parallelCalculateR(const double r, const double M, const std::pair<std::map
 //                    changeM = (firstM[i] == mQueue.top() || secondM[i] == mQueue.top()) ? true : false;
 //                }
 //            }
-//            
+//
 //            if (changeM)
 //            {
 //                for (size_t i = 0; i < numThread; ++i)
@@ -535,7 +535,7 @@ void parallelCalculateR(const double r, const double M, const std::pair<std::map
 //                for (size_t i = 0; i < numThread; ++i)
 //                {
 //                    vThread[i].join();
-//                   
+//
 //                }
 //            }
 //            else
@@ -582,11 +582,145 @@ void parallelCalculateR(const double r, const double M, const std::pair<std::map
 //    return minX;
 //}
 
+/*======================================бяе б опнькнл================================================================*/
+
+void newPointCalculator(const Point leftPoint, const Point rightPoint, double (*fnc)(double), const double m, Point& newPoint)
+{
+    double newX = ((rightPoint.x + leftPoint.x) / 2) -
+        ((rightPoint.y - leftPoint.y) / (2 * m));
+    double newY = fnc(newX);
+
+    newPoint.setPoint(newX, newY);
+}
+
+void newMCalculator(const Point leftPoint, const Point rightPoint, double& M)
+{
+    M = abs((rightPoint.y - leftPoint.y) /
+        (rightPoint.x - leftPoint.x));
+}
+
+void newRCalculator(const Point leftPoint, const Point rightPoint, const double m, double& R)
+{
+    R = (m * (rightPoint.x - leftPoint.x)) +
+        (((rightPoint.y - leftPoint.y) *
+            (rightPoint.y - leftPoint.y)) /
+            (m * rightPoint.x - leftPoint.x)) -
+        (2 * rightPoint.y + leftPoint.y);
+}
+
+double parallelNewMinValue(size_t numThread, const double a, const double b,
+    const double r, const double accuracy, size_t nMax,
+    double (*fnc)(double))
+{
+    std::vector<std::thread> vThread(numThread);
+    std::vector<Point> vPoint(numThread);
+    std::vector<std::pair<std::map<Point, double>::iterator, bool>> vIter(
+        numThread);
+    std::vector<double> firstM(numThread);
+    std::vector<double> secondM(numThread);
+    std::vector<ForR> firstR(numThread);
+    std::vector<ForR> secondR(numThread);
+
+    bool changeM = false;
+    std::map<Point, double> set;
+    auto* rQueue = new std::priority_queue<ForR, std::vector<ForR>, std::less<ForR>>;
+
+    double minX = (fnc(a) < fnc(b)) ? a : minX = b;
+    double min = (fnc(a) < fnc(b)) ? fnc(a) : min = fnc(b);
+
+    Point rightPoint(b, fnc(b));
+    Point leftPoint(a, fnc(a));
+    Point newPoint(b, fnc(b));
+
+    set.emplace(leftPoint, 0);
+    set.emplace(rightPoint, 0);
+
+    double M = abs((rightPoint.y - leftPoint.y) / (rightPoint.x - leftPoint.x));
+
+    double m = (M > 0) ? r * M : 1;
+
+    double R = (m * (rightPoint.x - leftPoint.x)) +
+        ((rightPoint.y - leftPoint.y) * (rightPoint.y - leftPoint.y) /
+            (m * (rightPoint.x - leftPoint.x))) -
+        2 * (rightPoint.y + leftPoint.y);
+
+    ForR tmpR(R, rightPoint, leftPoint);
+    (*rQueue).push(tmpR);
+
+    size_t count = 0;
+
+    while (count < nMax) {
+
+        rightPoint = (*rQueue).top().rightPoint;
+        leftPoint = (*rQueue).top().leftPoint;
+        if (rightPoint.x - leftPoint.x <= accuracy)
+        {
+            break;
+        }
+
+        newPointCalculator(leftPoint, rightPoint, fnc, m, newPoint);
+
+        auto cur = set.emplace(newPoint, 0).first;
+        auto prev = std::prev(cur);
+        double tmpM;
+        double prevM = M;
+
+        for (size_t i = 0; i < 2; ++i, ++cur, ++prev)
+        {
+            newMCalculator((*prev).first, (*cur).first, tmpM);
+            M = (i == 0) ? tmpM : M;
+            M = (i == 1 && tmpM > M) ? tmpM : M;
+            changeM = (M == prevM) ? false : true;
+        }
+
+        m = (M > 0) ? r * M : 1;
+
+        if (!changeM)
+        {
+            cur = set.find(newPoint);
+            prev = std::prev(cur);
+
+            for (size_t i = 0; i < 2; ++i, ++cur, ++prev)
+            {
+                newRCalculator((*prev).first, (*cur).first, m, R);
+                tmpR.setForR(R, (*cur).first, (*prev).first);
+                (*rQueue).push(tmpR);
+            }
+        }
+        else
+        {
+            delete rQueue;
+            rQueue = new std::priority_queue<ForR, std::vector<ForR>, std::less<ForR>>;
+
+            for (cur = (++set.begin()), prev = set.begin(); cur != set.end(); ++cur, ++prev)
+            {
+                newRCalculator((*prev).first, (*cur).first, m, R);
+                tmpR.setForR(R, (*cur).first, (*prev).first);
+                (*rQueue).push(tmpR);
+            }
+        }
+        std::cout << count << std::endl;
+        ++count;
+        if (newPoint.y < min)
+        {
+            min = newPoint.y;
+            minX = newPoint.x;
+        }
+    }
+    return minX;
+}
+
+
+
+
+
+
 int main()
 {
     setlocale(LC_ALL, "rus");
 
     //std::cout << inefficientParallelAlgorithm(1, 2.7, 7.5, 4.29, 0.0001, 10000, function1);
-    std::cout << parallelMinValue(2, 2.7, 7.5, 4.29, 0.0001, 10000, function1);
+    //std::cout << parallelMinValue(2, 2.7, 7.5, 4.29, 0.0001, 10000, function1);
+    std::cout << parallelNewMinValue(2, 2.7, 7.5, 4.29, 0.0001, 10000, function1);
     return 0;
 }
