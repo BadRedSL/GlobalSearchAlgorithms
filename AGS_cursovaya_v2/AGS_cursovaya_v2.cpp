@@ -608,18 +608,32 @@ void newRCalculator(const Point leftPoint, const Point rightPoint, const double 
         (2 * rightPoint.y + leftPoint.y);
 }
 
+void allParallelCalculator(const Point leftPoint, const Point rightPoint, const double m, const double r, double (*fnc)(double), Point& newPoint,
+    double& M1, double& M2, double& R1, double& R2, ForR& ForR1, ForR& ForR2)
+{
+    newPointCalculator(leftPoint, rightPoint, fnc, m, newPoint);
+    newMCalculator(leftPoint, newPoint, M1);
+    newMCalculator(newPoint, rightPoint, M2);
+    double M = (M1 > M2) ? M1 : M2;
+    double newm = (M > 0) ? r * M : 1;
+    newRCalculator(leftPoint, newPoint, newm, R1);
+    ForR1.setForR(R1, newPoint, leftPoint);
+    newRCalculator(newPoint, rightPoint, newm, R2);
+    ForR2.setForR(R2, rightPoint, newPoint);
+}
+
 double parallelNewMinValue(size_t numThread, const double a, const double b,
     const double r, const double accuracy, size_t nMax,
     double (*fnc)(double))
 {
-    std::vector<std::thread> vThread(numThread);
-    std::vector<Point> vPoint(numThread);
-    std::vector<std::pair<std::map<Point, double>::iterator, bool>> vIter(
-        numThread);
-    std::vector<double> firstM(numThread);
-    std::vector<double> secondM(numThread);
-    std::vector<ForR> firstR(numThread);
-    std::vector<ForR> secondR(numThread);
+    std::vector<std::thread> vThread;
+    std::vector<Point> vNewPoint(numThread);
+    std::vector<double> vM1(numThread);
+    std::vector<double> vM2(numThread);
+    std::vector<double> vR1(numThread);
+    std::vector<double> vR2(numThread);
+    std::vector<ForR> vForR1(numThread);
+    std::vector<ForR> vForR2(numThread);
 
     bool changeM = false;
     std::map<Point, double> set;
@@ -651,61 +665,113 @@ double parallelNewMinValue(size_t numThread, const double a, const double b,
 
     while (count < nMax) {
 
-        rightPoint = (*rQueue).top().rightPoint;
-        leftPoint = (*rQueue).top().leftPoint;
-        if (rightPoint.x - leftPoint.x <= accuracy)
+        if (numThread > (*rQueue).size())
         {
-            break;
-        }
+            rightPoint = (*rQueue).top().rightPoint;
+            leftPoint = (*rQueue).top().leftPoint;
+            if (rightPoint.x - leftPoint.x <= accuracy)
+            {
+                break;
+            }
 
-        newPointCalculator(leftPoint, rightPoint, fnc, m, newPoint);
+            newPointCalculator(leftPoint, rightPoint, fnc, m, newPoint);
 
-        auto cur = set.emplace(newPoint, 0).first;
-        auto prev = std::prev(cur);
-        double tmpM;
-        double prevM = M;
-
-        for (size_t i = 0; i < 2; ++i, ++cur, ++prev)
-        {
-            newMCalculator((*prev).first, (*cur).first, tmpM);
-            M = (i == 0) ? tmpM : M;
-            M = (i == 1 && tmpM > M) ? tmpM : M;
-            changeM = (M == prevM) ? false : true;
-        }
-
-        m = (M > 0) ? r * M : 1;
-
-        if (!changeM)
-        {
-            cur = set.find(newPoint);
-            prev = std::prev(cur);
+            auto cur = set.emplace(newPoint, 0).first;
+            auto prev = std::prev(cur);
+            double tmpM;
+            double prevM = M;
 
             for (size_t i = 0; i < 2; ++i, ++cur, ++prev)
             {
-                newRCalculator((*prev).first, (*cur).first, m, R);
-                tmpR.setForR(R, (*cur).first, (*prev).first);
-                (*rQueue).push(tmpR);
+                newMCalculator((*prev).first, (*cur).first, tmpM);
+                M = (i == 0) ? tmpM : M;
+                M = (i == 1 && tmpM > M) ? tmpM : M;
+                changeM = (M == prevM) ? false : true;
+            }
+
+            m = (M > 0) ? r * M : 1;
+
+            if (!changeM)
+            {
+                cur = set.find(newPoint);
+                prev = std::prev(cur);
+
+                for (size_t i = 0; i < 2; ++i, ++cur, ++prev)
+                {
+                    newRCalculator((*prev).first, (*cur).first, m, R);
+                    tmpR.setForR(R, (*cur).first, (*prev).first);
+                    (*rQueue).push(tmpR);
+                }
+            }
+            else
+            {
+                delete rQueue;
+                rQueue = new std::priority_queue<ForR, std::vector<ForR>, std::less<ForR>>;
+
+                for (cur = (++set.begin()), prev = set.begin(); cur != set.end(); ++cur, ++prev)
+                {
+                    newRCalculator((*prev).first, (*cur).first, m, R);
+                    tmpR.setForR(R, (*cur).first, (*prev).first);
+                    (*rQueue).push(tmpR);
+                }
+            }
+            std::cout << count << std::endl;
+            ++count;
+            if (newPoint.y < min)
+            {
+                min = newPoint.y;
+                minX = newPoint.x;
             }
         }
         else
         {
-            delete rQueue;
-            rQueue = new std::priority_queue<ForR, std::vector<ForR>, std::less<ForR>>;
-
-            for (cur = (++set.begin()), prev = set.begin(); cur != set.end(); ++cur, ++prev)
+            double prevM = M;
+            for (size_t i = 0; i < numThread; ++i)
             {
-                newRCalculator((*prev).first, (*cur).first, m, R);
-                tmpR.setForR(R, (*cur).first, (*prev).first);
-                (*rQueue).push(tmpR);
+                rightPoint = (*rQueue).top().rightPoint;
+                leftPoint = (*rQueue).top().leftPoint;
+                if (rightPoint.x - leftPoint.x <= accuracy)
+                {
+                    break;
+                }
+                vThread.push_back(std::thread(allParallelCalculator, leftPoint, rightPoint, m, r, fnc, std::ref(vNewPoint[i]), std::ref(vM1[i]), 
+                    std::ref(vM2[i]), std::ref(vR1[i]), std::ref(vR2[i]), std::ref(vForR1[i]), std::ref(vForR2[i])));
+                (*rQueue).pop();
+            }
+            for (size_t i = 0; i < numThread; ++i)
+            {
+                vThread[i].join();
+            }
+            vThread.clear();
+            for (size_t i = 0; i < numThread; ++i)
+            {
+                M = (vM1[i] > M) ? vM1[i] : M;
+                M = (vM2[i] > M) ? vM2[i] : M;
+                set.emplace(vNewPoint[i], 0);
+                (*rQueue).push(vForR1[i]);
+                (*rQueue).push(vForR2[i]);
+            }
+            if (prevM != M)
+            {
+                delete rQueue;
+                rQueue = new std::priority_queue<ForR, std::vector<ForR>, std::less<ForR>>;
+
+                for (auto cur = (++set.begin()), prev = set.begin(); cur != set.end(); ++cur, ++prev)
+                {
+                    newRCalculator((*prev).first, (*cur).first, m, R);
+                    tmpR.setForR(R, (*cur).first, (*prev).first);
+                    (*rQueue).push(tmpR);
+                }
+            }
+            std::cout << count << std::endl;
+            ++count;
+            if (newPoint.y < min)
+            {
+                min = newPoint.y;
+                minX = newPoint.x;
             }
         }
-        std::cout << count << std::endl;
-        ++count;
-        if (newPoint.y < min)
-        {
-            min = newPoint.y;
-            minX = newPoint.x;
-        }
+        
     }
     return minX;
 }
@@ -721,6 +787,6 @@ int main()
 
     //std::cout << inefficientParallelAlgorithm(1, 2.7, 7.5, 4.29, 0.0001, 10000, function1);
     //std::cout << parallelMinValue(2, 2.7, 7.5, 4.29, 0.0001, 10000, function1);
-    std::cout << parallelNewMinValue(2, 2.7, 7.5, 4.29, 0.0001, 10000, function1);
+    std::cout << parallelNewMinValue(16, 0, 1.2, 36, 0.0001, 10000, function3);
     return 0;
 }
