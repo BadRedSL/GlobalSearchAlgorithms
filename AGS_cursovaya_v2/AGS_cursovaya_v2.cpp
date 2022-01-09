@@ -497,17 +497,17 @@ int main()
 {
     setlocale(LC_ALL, "rus");
 
-    auto start1 = std::chrono::system_clock::now();
+    /*auto start1 = std::chrono::system_clock::now();
     std::cout << functionNewMinValue(-10, 10, 2.5, 0.0001, 10000, function4) << std::endl;
     auto end1 = std::chrono::system_clock::now();
     std::chrono::duration<double> sec1 = end1 - start1;
-    std::cout << "Время работы последовательного алгоритма: " << sec1.count() << " сек " << std::endl;
+    std::cout << "Время работы последовательного алгоритма: " << sec1.count() << " сек " << std::endl;*/
 
-    /*auto start2 = std::chrono::system_clock::now();
+    auto start2 = std::chrono::system_clock::now();
     std::cout << parallelNewMinValue(12, 2.7, 7.5, 4.29, 0.0001, 10000, function1) << std::endl;
     auto end2 = std::chrono::system_clock::now();
     std::chrono::duration<double> sec2 = end2 - start2;
-    std::cout << "Время работы параллельного алгоритма: " << sec2.count() << " сек " << std::endl;*/
+    std::cout << "Время работы параллельного алгоритма: " << sec2.count() << " сек " << std::endl;
 
     return 0;
 }
