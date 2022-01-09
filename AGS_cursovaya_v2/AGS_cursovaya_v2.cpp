@@ -197,391 +197,6 @@ double inefficientParallelAlgorithm(size_t numThread, double leftBorder, double 
     return minX;
 }
 
-
-// функции для последовательного алгоритма
-// functions for sequential algorithm
-
-void setCalculateNewPoint(std::pair<std::map<Point, double>::iterator, bool>& curIter, std::priority_queue<ForR, std::vector<ForR>, std::less<ForR>>* rQueue, std::map<Point, double>& set,
-    double& min, double& minX, const double m, double (*fnc)(double))
-{
-    Point rightPoint = (*rQueue).top().rightPoint;
-    Point leftPoint = (*rQueue).top().leftPoint;
-    Point newPoint;
-
-    double newX = ((rightPoint.x + leftPoint.x) / 2) -
-        ((rightPoint.y - leftPoint.y) / (2 * m));
-    double newY = fnc(newX);
-
-    newPoint.setPoint(newX, newY);
-
-    if (newY < min)
-    {
-        minX = newX;
-        min = newY;
-    }
-
-    curIter = set.emplace(newPoint, 0);
-}
-
-void calculateM(std::pair<std::map<Point, double>::iterator, bool>& curIter, std::priority_queue<double, std::vector<double>,
-    std::less<double>> &mQueue, bool& changeM, const Point rightPoint, const Point leftPoint)
-{
-    auto curTmp = curIter.first;
-    auto prevTmp = std::prev(curTmp);
-    double M;
-
-    if (mQueue.top() == abs((rightPoint.y - leftPoint.y) / (rightPoint.x - leftPoint.x)))
-    {
-        mQueue.pop();
-    }
-
-    for (size_t i = 0; i < 2; ++i)
-    {
-        M = abs(((*curTmp).first.y - (*prevTmp).first.y) /
-            ((*curTmp).first.x - (*prevTmp).first.x));
-        if (!mQueue.empty())
-        {
-            changeM = (M == mQueue.top()) ? true : false;
-        }
-        mQueue.push(M);
-        ++curTmp;
-        ++prevTmp;
-    }
-}
-
-void calculateR(std::pair<std::map<Point, double>::iterator, bool>& curIter, std::vector<ForR>& newR, const double m)
-{
-    auto curTmp = curIter.first;
-    auto prevTmp = std::prev(curTmp);
-    double R;
-
-    for (size_t i = 0; i < 2; ++i)
-    {
-        R = (m * ((*curTmp).first.x - (*prevTmp).first.x)) +
-            ((((*curTmp).first.y - (*prevTmp).first.y) *
-                ((*curTmp).first.y - (*prevTmp).first.y)) /
-                (m * (*curTmp).first.x - (*prevTmp).first.x)) -
-            (2 * (*curTmp).first.y + (*prevTmp).first.y);
-
-        ++curTmp;
-        ++prevTmp;
-
-        newR[i].setForR(R, (*curTmp).first, (*prevTmp).first);
-
-    }
-}
-
-void reNewR(std::priority_queue<ForR, std::vector<ForR>, std::less<ForR>>** rQueue, std::map<Point, double>& set, const double m)
-{
-    delete* rQueue;
-    *rQueue = new std::priority_queue<ForR, std::vector<ForR>, std::less<ForR>>;
-    double R;
-    ForR newR;
-
-    for (auto curTmp = (++set.begin()), prevTmp = set.begin(); curTmp != set.end(); ++curTmp, ++prevTmp)
-    {
-        R = (m * ((*curTmp).first.x - (*prevTmp).first.x)) +
-            ((((*curTmp).first.y - (*prevTmp).first.y) *
-                ((*curTmp).first.y - (*prevTmp).first.y)) /
-                (m * (*curTmp).first.x - (*prevTmp).first.x)) -
-            (2 * (*curTmp).first.y + (*prevTmp).first.y);
-
-        newR.setForR(R, (*curTmp).first, (*prevTmp).first);
-        (**rQueue).push(newR);
-    }
-}
-
-
-// последовательный алгоритм на функциях
-// sequential algorithm on functions
-
-double functionMinValue(const double a, const double b, const double r, const double accuracy, size_t nMax, double (*fnc)(double))
-{
-    bool changeM = false;
-    std::vector<ForR> newR(2);
-    std::map<Point, double> set;
-    std::priority_queue<double, std::vector<double>, std::less<double>> mQueue;
-    auto* rQueue = new std::priority_queue<ForR, std::vector<ForR>, std::less<ForR>>;
-
-    double minX = (fnc(a) < fnc(b)) ? a : minX = b;
-    double min = (fnc(a) < fnc(b)) ? fnc(a) : min = fnc(b);
-
-    Point rightPoint(b, fnc(b));
-    Point leftPoint(a, fnc(a));
-    Point newPoint(b, fnc(b));
-
-    set.emplace(leftPoint, 0);
-    auto curIter = set.emplace(rightPoint, 0);
-
-    double M = abs((rightPoint.y - leftPoint.y) / (rightPoint.x - leftPoint.x));
-    mQueue.push(M);
-
-    double m = (M > 0) ? r * M : 1;
-
-    double R = (m * (rightPoint.x - leftPoint.x)) +
-        ((rightPoint.y - leftPoint.y) * (rightPoint.y - leftPoint.y) /
-            (m * (rightPoint.x - leftPoint.x))) -
-        2 * (rightPoint.y + leftPoint.y);
-    ForR tmpR(R, rightPoint, leftPoint);
-    (*rQueue).push(tmpR);
-
-    size_t count = 0;
-
-    while ((count < nMax) && (rightPoint.x - leftPoint.x > accuracy))
-    {
-        setCalculateNewPoint(curIter, rQueue, set, min, minX, m, fnc);
-
-        calculateM(curIter, mQueue, changeM, rightPoint, leftPoint);
-
-        if (mQueue.top() > 0)
-        {
-            m = r * mQueue.top();
-        }
-        else
-        {
-            m = 1;
-        }
-
-        if (changeM)
-        {
-            calculateR(curIter, newR, m);
-            (*rQueue).pop();
-            (*rQueue).push(newR[0]);
-            (*rQueue).pop();
-            (*rQueue).push(newR[1]);
-        }
-        else
-        {
-            reNewR(&rQueue, set, m);
-        }
-
-        rightPoint = (*rQueue).top().rightPoint;
-        leftPoint = (*rQueue).top().leftPoint;
-        std::cout << count << std::endl;
-        ++count;
-    }
-    return minX;
-}
-
-// функции для параллельного алгоритма
-// functions for the parallel algorithm
-
-void parallelCalculateNewPoint(const ForR top, double (*fnc)(double), const double m, Point& newPoint)
-{
-    Point rightPoint = top.rightPoint;
-    Point leftPoint = top.leftPoint;
-
-    double newX = ((rightPoint.x + leftPoint.x) / 2) -
-        ((rightPoint.y - leftPoint.y) / (2 * m));
-    double newY = fnc(newX);
-
-    newPoint.setPoint(newX, newY);
-}
-
-void parallelCalculateM(const std::pair<std::map<Point, double>::iterator, bool> iter, double& firstM, double& secondM)
-{
-    auto curTmp = iter.first;
-    auto prevTmp = std::prev(curTmp);
-    double M;
-
-    for (size_t i = 0; i < 2; ++i)
-    {
-        M = abs(((*curTmp).first.y - (*prevTmp).first.y) /
-            ((*curTmp).first.x - (*prevTmp).first.x));
-
-        if (i == 0)
-        {
-            firstM = M;
-        }
-        if (i == 1)
-        {
-            secondM = M;
-        }
-
-        ++curTmp;
-        ++prevTmp;
-    }
-}
-
-void parallelCalculateR(const double r, const double M, const std::pair<std::map<Point, double>::iterator, bool> iter, ForR& firstR, ForR& secondR)
-{
-    double m;
-    double R;
-    ForR newR;
-
-    if (M > 0)
-    {
-        m = r * M;
-    }
-    else
-    {
-        m = 1;
-    }
-
-    auto curTmp = iter.first;
-    auto prevTmp = std::prev(curTmp);
-
-    for (size_t i = 0; i < 2; ++i)
-    {
-        R = (m * ((*curTmp).first.x - (*prevTmp).first.x)) +
-            ((((*curTmp).first.y - (*prevTmp).first.y) *
-                ((*curTmp).first.y - (*prevTmp).first.y)) /
-                (m * (*curTmp).first.x - (*prevTmp).first.x)) -
-            (2 * (*curTmp).first.y + (*prevTmp).first.y);
-
-        ++curTmp;
-        ++prevTmp;
-
-        newR.setForR(R, (*curTmp).first, (*prevTmp).first);
-        if (i == 0)
-        {
-            firstR = newR;
-        }
-        if (i == 1)
-        {
-            secondR = newR;
-        }
-
-    }
-}
-
-
-// параллельный алгоритм (в разработке)
-// parallel algorithm (in development)
-
-//double parallelMinValue(size_t numThread, const double a, const double b, const double r, const double accuracy, size_t nMax, double (*fnc)(double))
-//{
-//    std::vector<std::thread> vThread(numThread);
-//    std::vector<Point> vPoint(numThread);
-//    std::vector<std::pair<std::map<Point, double>::iterator, bool>> vIter(numThread);
-//    std::vector<double> firstM(numThread);
-//    std::vector<double> secondM(numThread);
-//    std::vector<ForR> firstR(numThread);
-//    std::vector<ForR> secondR(numThread);
-//
-//
-//    bool changeM = false;
-//    std::vector<ForR> newR(2);
-//    std::map<Point, double> set;
-//    std::priority_queue<double, std::vector<double>, std::less<double>> mQueue;
-//    auto* rQueue = new std::priority_queue<ForR, std::vector<ForR>, std::less<ForR>>;
-//
-//    double minX = (fnc(a) < fnc(b)) ? a : minX = b;
-//    double min = (fnc(a) < fnc(b)) ? fnc(a) : min = fnc(b);
-//
-//    Point rightPoint(b, fnc(b));
-//    Point leftPoint(a, fnc(a));
-//    Point newPoint(b, fnc(b));
-//
-//    set.emplace(leftPoint, 0);
-//    auto curIter = set.emplace(rightPoint, 0);
-//
-//    double M = abs((rightPoint.y - leftPoint.y) / (rightPoint.x - leftPoint.x));
-//    mQueue.push(M);
-//
-//    double m = (M > 0) ? r * M : 1;
-//
-//    double R = (m * (rightPoint.x - leftPoint.x)) +
-//        ((rightPoint.y - leftPoint.y) * (rightPoint.y - leftPoint.y) /
-//            (m * (rightPoint.x - leftPoint.x))) -
-//        2 * (rightPoint.y + leftPoint.y);
-//    ForR tmpR(R, rightPoint, leftPoint);
-//    (*rQueue).push(tmpR);
-//
-//    size_t count = 0;
-//
-//    while ((count < nMax) && (rightPoint.x - leftPoint.x > accuracy))
-//    {
-//        if ((*rQueue).size() >= numThread)
-//        {
-//            for (size_t i = 0; i < numThread; ++i)
-//            {
-//                vThread[i] = (std::thread(parallelCalculateNewPoint, (*rQueue).top(), fnc, m, std::ref(vPoint[i]))); //нужно добавить флаг выхода по accuracy
-//                (*rQueue).pop();
-//            }
-//            for (size_t i = 0; i < numThread; ++i)
-//            {
-//                vThread[i].join();
-//                min = (vPoint[i].y < min) ? vPoint[i].y : min;
-//                minX = (vPoint[i].y < min) ? vPoint[i].x : minX; //совместить функции
-//                vIter[i] = set.emplace(vPoint[i], 0);
-//            }
-//
-//            for (size_t i = 0; i < numThread; ++i)
-//            {
-//                /*if (mQueue.top() == abs((rightPoint.y - leftPoint.y) / (rightPoint.x - leftPoint.x))) // убрать очередь с М
-//                {
-//                    mQueue.pop();
-//                }*/
-//                vThread[i] = (std::thread(parallelCalculateM, vIter[i], std::ref(firstM[i]), std::ref(secondM[i])));
-//            }
-//            for (size_t i = 0; i < numThread; ++i)
-//            {
-//                vThread[i].join();
-//                mQueue.push(firstM[i]);
-//                mQueue.push(secondM[i]);
-//                if (!mQueue.empty())
-//                {
-//                    changeM = (firstM[i] == mQueue.top() || secondM[i] == mQueue.top()) ? true : false;
-//                }
-//            }
-//
-//            if (changeM)
-//            {
-//                for (size_t i = 0; i < numThread; ++i)
-//                {
-//                    vThread[i] = (std::thread(parallelCalculateR, ));
-//                }
-//                for (size_t i = 0; i < numThread; ++i)
-//                {
-//                    vThread[i].join();
-//
-//                }
-//            }
-//            else
-//            {
-//                (*rQueue).pop();
-//                (*rQueue).push(newR);
-//            }
-//
-//        }
-//        else
-//        {
-//            setCalculateNewPoint(curIter, rQueue, set, min, minX, m, fnc);
-//
-//            calculateM(curIter, mQueue, changeM, rightPoint, leftPoint);
-//
-//            if (mQueue.top() > 0)
-//            {
-//                m = r * mQueue.top();
-//            }
-//            else
-//            {
-//                m = 1;
-//            }
-//
-//            if (changeM)
-//            {
-//                calculateR(curIter, newR, m);
-//                (*rQueue).pop();
-//                (*rQueue).push(newR[0]);
-//                (*rQueue).pop();
-//                (*rQueue).push(newR[1]);
-//            }
-//            else
-//            {
-//                reNewR(&rQueue, set, m);
-//            }
-//
-//            rightPoint = (*rQueue).top().rightPoint;
-//            leftPoint = (*rQueue).top().leftPoint;
-//            std::cout << count << std::endl;
-//            ++count;
-//        }
-//    }
-//    return minX;
-//}
-
 /*======================================ВСЕ В ПРОШЛОМ================================================================*/
 
 void newPointCalculator(const Point leftPoint, const Point rightPoint, double (*fnc)(double), const double m, Point& newPoint)
@@ -608,18 +223,103 @@ void newRCalculator(const Point leftPoint, const Point rightPoint, const double 
         (2 * rightPoint.y + leftPoint.y);
 }
 
-void allParallelCalculator(const Point leftPoint, const Point rightPoint, const double m, const double r, double (*fnc)(double), Point& newPoint,
-    double& M1, double& M2, double& R1, double& R2, ForR& ForR1, ForR& ForR2)
+void allParallelCalculator(const Point leftPoint, const Point rightPoint, const double r, double (*fnc)(double), Point& newPoint,
+    double& M1, double& M2, double& R1, double& R2, ForR& ForR1, ForR& ForR2, double& vm)
 {
-    newPointCalculator(leftPoint, rightPoint, fnc, m, newPoint);
+    newPointCalculator(leftPoint, rightPoint, fnc, vm, newPoint);
     newMCalculator(leftPoint, newPoint, M1);
     newMCalculator(newPoint, rightPoint, M2);
     double M = (M1 > M2) ? M1 : M2;
-    double newm = (M > 0) ? r * M : 1;
-    newRCalculator(leftPoint, newPoint, newm, R1);
+    vm = (M > 0) ? r * M : 1;
+    newRCalculator(leftPoint, newPoint, vm, R1);
     ForR1.setForR(R1, newPoint, leftPoint);
-    newRCalculator(newPoint, rightPoint, newm, R2);
+    newRCalculator(newPoint, rightPoint, vm, R2);
     ForR2.setForR(R2, rightPoint, newPoint);
+}
+
+double functionNewMinValue(const double a, const double b,
+    const double r, const double accuracy, size_t nMax,
+    double (*fnc)(double))
+{
+    bool changeM = false;
+    std::map<Point, double> set;
+    auto* rQueue = new std::priority_queue<ForR, std::vector<ForR>, std::less<ForR>>;
+
+    double minX = (fnc(a) < fnc(b)) ? a : minX = b;
+    double min = (fnc(a) < fnc(b)) ? fnc(a) : min = fnc(b);
+
+    Point rightPoint(b, fnc(b));
+    Point leftPoint(a, fnc(a));
+    Point newPoint(b, fnc(b));
+
+    set.emplace(leftPoint, 0);
+    set.emplace(rightPoint, 0);
+
+    double M = abs((rightPoint.y - leftPoint.y) / (rightPoint.x - leftPoint.x));
+
+    double m = (M > 0) ? r * M : 1;
+
+    double R = (m * (rightPoint.x - leftPoint.x)) +
+        ((rightPoint.y - leftPoint.y) * (rightPoint.y - leftPoint.y) /
+            (m * (rightPoint.x - leftPoint.x))) -
+        2 * (rightPoint.y + leftPoint.y);
+
+    ForR tmpR(R, rightPoint, leftPoint);
+    (*rQueue).push(tmpR);
+
+    size_t count = 0;
+
+    while ((count < nMax) && (rightPoint.x - leftPoint.x > accuracy))
+    {
+        rightPoint = (*rQueue).top().rightPoint;
+        leftPoint = (*rQueue).top().leftPoint;
+
+        newPointCalculator(leftPoint, rightPoint, fnc, m, newPoint);
+        set.emplace(newPoint, 0);
+
+        double tmpM = 0;
+        double prevM = M;
+
+        newMCalculator(leftPoint, newPoint, tmpM);
+        M = (tmpM > M) ? tmpM : M;
+        newMCalculator(newPoint, rightPoint, tmpM);
+        M = (tmpM > M) ? tmpM : M;
+        changeM = (M == prevM) ? false : true;
+     
+        m = (M > 0) ? r * M : 1;
+
+        if (!changeM)
+        {
+            newRCalculator(leftPoint, newPoint, m, R);
+            tmpR.setForR(R, newPoint, leftPoint);
+            (*rQueue).pop();
+            (*rQueue).push(tmpR);
+            newRCalculator(newPoint, rightPoint, m, R);
+            tmpR.setForR(R, rightPoint, newPoint);
+            (*rQueue).pop();
+            (*rQueue).push(tmpR);
+        }
+        else
+        {
+            delete rQueue;
+            rQueue = new std::priority_queue<ForR, std::vector<ForR>, std::less<ForR>>;
+
+            for (auto cur = (++set.begin()), prev = set.begin(); cur != set.end(); ++cur, ++prev)
+            {
+                newRCalculator((*prev).first, (*cur).first, m, R);
+                tmpR.setForR(R, (*cur).first, (*prev).first);
+                (*rQueue).push(tmpR);
+            }
+        }
+        std::cout << count << std::endl;
+        ++count;
+        if (newPoint.y < min)
+        {
+            min = newPoint.y;
+            minX = newPoint.x;
+        }
+    }
+    return minX;
 }
 
 double parallelNewMinValue(size_t numThread, const double a, const double b,
@@ -634,8 +334,10 @@ double parallelNewMinValue(size_t numThread, const double a, const double b,
     std::vector<double> vR2(numThread);
     std::vector<ForR> vForR1(numThread);
     std::vector<ForR> vForR2(numThread);
+    std::vector<double> vm(numThread);
 
     bool changeM = false;
+    bool exitFlag = false;
     std::map<Point, double> set;
     auto* rQueue = new std::priority_queue<ForR, std::vector<ForR>, std::less<ForR>>;
 
@@ -665,7 +367,7 @@ double parallelNewMinValue(size_t numThread, const double a, const double b,
 
     while (count < nMax) {
 
-        if (numThread > (*rQueue).size())
+        if (numThread >= (*rQueue).size())
         {
             rightPoint = (*rQueue).top().rightPoint;
             leftPoint = (*rQueue).top().leftPoint;
@@ -690,6 +392,10 @@ double parallelNewMinValue(size_t numThread, const double a, const double b,
             }
 
             m = (M > 0) ? r * M : 1;
+            for (auto& iter : vm)
+            {
+                iter = m;
+            }
 
             if (!changeM)
             {
@@ -715,7 +421,7 @@ double parallelNewMinValue(size_t numThread, const double a, const double b,
                     (*rQueue).push(tmpR);
                 }
             }
-            std::cout << count << std::endl;
+            //std::cout << count << std::endl;
             ++count;
             if (newPoint.y < min)
             {
@@ -732,10 +438,10 @@ double parallelNewMinValue(size_t numThread, const double a, const double b,
                 leftPoint = (*rQueue).top().leftPoint;
                 if (rightPoint.x - leftPoint.x <= accuracy)
                 {
-                    break;
+                    exitFlag = true;
                 }
-                vThread.push_back(std::thread(allParallelCalculator, leftPoint, rightPoint, m, r, fnc, std::ref(vNewPoint[i]), std::ref(vM1[i]), 
-                    std::ref(vM2[i]), std::ref(vR1[i]), std::ref(vR2[i]), std::ref(vForR1[i]), std::ref(vForR2[i])));
+                vThread.push_back(std::thread(allParallelCalculator, leftPoint, rightPoint, r, fnc, std::ref(vNewPoint[i]), std::ref(vM1[i]), 
+                    std::ref(vM2[i]), std::ref(vR1[i]), std::ref(vR2[i]), std::ref(vForR1[i]), std::ref(vForR2[i]), std::ref(vm[i])));
                 (*rQueue).pop();
             }
             for (size_t i = 0; i < numThread; ++i)
@@ -743,6 +449,10 @@ double parallelNewMinValue(size_t numThread, const double a, const double b,
                 vThread[i].join();
             }
             vThread.clear();
+            if (exitFlag)
+            {
+                break;
+            }
             for (size_t i = 0; i < numThread; ++i)
             {
                 M = (vM1[i] > M) ? vM1[i] : M;
@@ -750,6 +460,10 @@ double parallelNewMinValue(size_t numThread, const double a, const double b,
                 set.emplace(vNewPoint[i], 0);
                 (*rQueue).push(vForR1[i]);
                 (*rQueue).push(vForR2[i]);
+            }
+            for (auto& iter : vm)
+            {
+                iter = (M>0) ? r*M : 1;
             }
             if (prevM != M)
             {
@@ -763,30 +477,37 @@ double parallelNewMinValue(size_t numThread, const double a, const double b,
                     (*rQueue).push(tmpR);
                 }
             }
-            std::cout << count << std::endl;
+            //std::cout << count << std::endl;
             ++count;
-            if (newPoint.y < min)
+            for (const auto iter : vNewPoint)
             {
-                min = newPoint.y;
-                minX = newPoint.x;
-            }
+                if (iter.y < min)
+                {
+                    min = iter.y;
+                    minX = iter.x;
+                }
+            } 
         }
-        
     }
     return minX;
 }
-
-
-
-
 
 
 int main()
 {
     setlocale(LC_ALL, "rus");
 
-    //std::cout << inefficientParallelAlgorithm(1, 2.7, 7.5, 4.29, 0.0001, 10000, function1);
-    //std::cout << parallelMinValue(2, 2.7, 7.5, 4.29, 0.0001, 10000, function1);
-    std::cout << parallelNewMinValue(16, 0, 1.2, 36, 0.0001, 10000, function3);
+    auto start1 = std::chrono::system_clock::now();
+    std::cout << functionNewMinValue(-10, 10, 2.5, 0.0001, 10000, function4) << std::endl;
+    auto end1 = std::chrono::system_clock::now();
+    std::chrono::duration<double> sec1 = end1 - start1;
+    std::cout << "Время работы последовательного алгоритма: " << sec1.count() << " сек " << std::endl;
+
+    /*auto start2 = std::chrono::system_clock::now();
+    std::cout << parallelNewMinValue(12, 2.7, 7.5, 4.29, 0.0001, 10000, function1) << std::endl;
+    auto end2 = std::chrono::system_clock::now();
+    std::chrono::duration<double> sec2 = end2 - start2;
+    std::cout << "Время работы параллельного алгоритма: " << sec2.count() << " сек " << std::endl;*/
+
     return 0;
 }
