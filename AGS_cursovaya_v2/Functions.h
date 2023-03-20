@@ -19,3 +19,5 @@ double function8(const double x);
 double function9(const double x);
 
 double function10(const double x);
+
+double function11(const double x);
