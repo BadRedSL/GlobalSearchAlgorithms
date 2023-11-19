@@ -1,2 +1,5 @@
-# Gobal_Search_Algorithm
-Implementation of the global search algorithm
+# GobalSearchAlgorithms
+Implementation of characteristic global search algorithms:
+- Strongin's algorithm
+- Algorithm using numerical estimates of the derivative
+- Multidimensional global search algorithm using Peano curves
